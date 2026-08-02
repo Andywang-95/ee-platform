@@ -1,0 +1,91 @@
+version: "3"
+
+tasks:
+  setup:
+    desc: Install all dependencies
+    deps:
+      - backend-install
+      - frontend-install
+
+  backend-install:
+    dir: backend
+    cmds:
+      - uv sync
+
+  frontend-install:
+    dir: frontend
+    cmds:
+      - pnpm install
+
+  backend:
+    desc: Start Django
+    dir: backend
+    cmds:
+      - uv run python manage.py runserver
+
+  frontend:
+    desc: Start Vue
+    dir: frontend
+    cmds:
+      - pnpm dev
+
+  migrate:
+    desc: Django Migration
+    dir: backend
+    cmds:
+      - uv run python manage.py migrate
+
+  makemigrations:
+    dir: backend
+    cmds:
+      - uv run python manage.py makemigrations
+
+  shell:
+    dir: backend
+    cmds:
+      - uv run python manage.py shell
+
+  createsuperuser:
+    dir: backend
+    cmds:
+      - uv run python manage.py createsuperuser
+
+  lint:
+    deps:
+      - lint-backend
+      - lint-frontend
+
+  lint-backend:
+    dir: backend
+    cmds:
+      - uv run ruff check .
+
+  lint-frontend:
+    dir: frontend
+    cmds:
+      - pnpm lint
+
+  format:
+    deps:
+      - format-backend
+      - format-frontend
+
+  format-backend:
+    dir: backend
+    cmds:
+      - uv run ruff format .
+
+  format-frontend:
+    dir: frontend
+    cmds:
+      - pnpm format
+
+  be:
+    desc: cd backend
+    cmds:
+      - cd backend
+
+  fe:
+    desc: cd frontend
+    cmds:
+      - cd frontend
