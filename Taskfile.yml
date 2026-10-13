@@ -8,11 +8,15 @@ tasks:
       - frontend-install
 
   backend-install:
+    desc: Install backend dependencies
     dir: backend
     cmds:
       - uv sync
 
+  # Frontend tasks are placeholders until the React project is created (M1);
+  # they will switch to Vite+ (vp) commands then.
   frontend-install:
+    desc: Install frontend dependencies
     dir: frontend
     cmds:
       - pnpm install
@@ -24,7 +28,7 @@ tasks:
       - uv run python manage.py runserver
 
   frontend:
-    desc: Start Vue
+    desc: Start frontend dev server
     dir: frontend
     cmds:
       - pnpm dev
@@ -36,56 +40,64 @@ tasks:
       - uv run python manage.py migrate
 
   makemigrations:
+    desc: Create Django migrations
     dir: backend
     cmds:
       - uv run python manage.py makemigrations
 
   shell:
+    desc: Django shell
     dir: backend
     cmds:
       - uv run python manage.py shell
 
   createsuperuser:
+    desc: Create a Django superuser
     dir: backend
     cmds:
       - uv run python manage.py createsuperuser
 
   lint:
+    desc: Lint backend and frontend
     deps:
       - lint-backend
       - lint-frontend
 
   lint-backend:
+    desc: Lint backend
     dir: backend
     cmds:
       - uv run ruff check .
 
   lint-frontend:
+    desc: Lint frontend
     dir: frontend
     cmds:
       - pnpm lint
 
   format:
+    desc: Format backend and frontend
     deps:
       - format-backend
       - format-frontend
 
   format-backend:
+    desc: Format backend
     dir: backend
     cmds:
       - uv run ruff format .
 
   format-frontend:
+    desc: Format frontend
     dir: frontend
     cmds:
       - pnpm format
 
-  be:
-    desc: cd backend
+  # Single entry point for CI (local and Jenkins). Backend lint/format only for
+  # now; tests and frontend checks are added in M1.
+  ci:
+    desc: Run all CI checks
+    dir: backend
     cmds:
-      - cd backend
-
-  fe:
-    desc: cd frontend
-    cmds:
-      - cd frontend
+      - uv run ruff check .
+      - uv run ruff format --check .

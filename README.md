@@ -1,111 +1,50 @@
 # EE Platform
 
-EE Platform 是一個以 **Django + Django REST Framework + Vue.js** 為基礎開發的企業內部工程平台 Demo。
+給 EE 使用的內部工具平台，目標是把日常會用到的工具集中在一個網站：查零件、BOM 工具、線路檢查，之後再接上 AI。
 
-本專案主要目標是提供一個可維護、可擴充的架構，用於管理與查詢電子零件資料（Parts），並逐步取代部分既有桌面工具的操作流程。
+目前是個人專案，處於規劃完成、準備開始實作的階段。MVP 完成並實測後才會評估部署到公司。
 
-目前專案仍處於初期架構設計與開發階段，所有設計皆以可維護性、可擴充性與企業級開發流程為主要考量。
+## MVP 範圍
 
----
+不依賴 Capture CIS 就能查詢公司零件資料庫的網頁介面：
 
-## 專案目標
+- 依零件類型查詢、搜尋、篩選
+- 滑鼠懸停在零件上顯示備註欄位
+- 特定人員可以編輯零件資料，修改留有紀錄
 
-- 建立企業級 Web Platform 架構
-- 提供零件資料查詢功能
-- 建立完整的權限管理機制
-- 建立零件維護流程
-- 提供 API 供前端與其他系統整合
-- 建立可持續擴充的系統架構
+Symbol / Footprint 圖形顯示排在 MVP 之後。完整規劃見 [docs/roadmap.md](docs/roadmap.md)。
 
----
+## 技術棧
 
-## 技術架構
-
-### Backend
-
-- Python
-- Django
-- Django REST Framework
-- drf-spectacular
-- Microsoft SQL Server
-
-### Frontend
-
-- Vue.js
-- TypeScript
-
-### Development
-
-- uv
-- Ruff
-- Docker
-- Docker Compose
-
----
-
-## 專案結構
-
-```text
-.
-├── backend/
-├── frontend/
-├── docs/
-└── README.md
-```
-
----
-
-## 文件
-
-所有設計文件皆放置於 `docs/`。
-
-目前包含：
-
-- 系統架構
-- Database 設計
-- Domain Design
-- Authentication Design
-- ADR（Architecture Decision Records）
-- Development Guideline
-
----
+| 層 | 選擇 |
+|---|---|
+| 前端 | React、TypeScript、Vite+ |
+| 後端 | Python 3.13、Django 5.2、Django REST Framework、drf-spectacular |
+| 資料庫 | Microsoft SQL Server（既有零件庫 + 平台專用庫） |
+| 執行環境 | Docker Compose |
+| 開發工具 | uv、Ruff、Taskfile |
 
 ## 快速開始
 
-Backend：
+目前只有後端骨架：
 
 ```bash
-cd backend
-uv sync
-uv run python manage.py runserver
+task backend-install
+task backend
 ```
 
-Frontend：
+前端專案與 compose 環境會在里程碑 M1 建立，見 [docs/development.md](docs/development.md)。
 
-> Frontend 尚未開始建置。
+## 文件
 
----
-
-## 開發狀態
-
-目前已完成：
-
-- 專案初始化
-- 技術選型
-- 系統架構設計
-- Domain 架構設計
-- 權限架構設計
-- Django Backend 初始化
-
-目前主要開發項目：
-
-- Parts Module
-- Parts Query API
-- Authentication
-- Permission Management
-
----
-
-## License
-
-目前僅作為個人 Demo 與架構研究用途。
+| 文件 | 內容 |
+|---|---|
+| [docs/roadmap.md](docs/roadmap.md) | 願景、MVP 範圍、里程碑、後續功能 |
+| [docs/architecture.md](docs/architecture.md) | 系統組成、資料庫分工、目錄結構 |
+| [docs/development.md](docs/development.md) | 本機開發環境 |
+| [docs/deployment.md](docs/deployment.md) | 公司內部署方式 |
+| [docs/open-questions.md](docs/open-questions.md) | 進公司前要確認的事項 |
+| [docs/domains/parts.md](docs/domains/parts.md) | 零件查詢與維護 |
+| [docs/domains/auth.md](docs/domains/auth.md) | 登入與權限 |
+| [docs/domains/cad-assets.md](docs/domains/cad-assets.md) | Symbol / Footprint 顯示的技術驗證 |
+| [docs/adr/](docs/adr/) | 架構決策紀錄 |

@@ -1,129 +1,44 @@
 # Backend
 
-Backend 採用 Django 作為主要框架，負責提供 REST API、資料存取、權限管理以及商業邏輯。
+Django + Django REST Framework，提供 REST API、資料存取與權限控管。
 
----
+## 需求
 
-## 技術
-
-- Python
-- Django
-- Django REST Framework
-- drf-spectacular
-- Microsoft SQL Server（規劃中）
-
----
-
-## Requirements
-
-- Python 3.13+
-- uv
-
----
-
-## 安裝
-
-```bash
-uv sync
-```
-
----
-
-## 啟動開發環境
-
-```bash
-uv run python manage.py runserver
-```
-
----
+- [uv](https://docs.astral.sh/uv/)（Python 版本由 `.python-version` 指定）
 
 ## 常用指令
 
-啟動 Server：
+在 `backend/` 目錄下：
 
 ```bash
-uv run python manage.py runserver
+uv sync                                    # 安裝依賴
+uv run python manage.py runserver          # 啟動開發伺服器
+uv run python manage.py makemigrations     # 建立 migration
+uv run python manage.py migrate            # 套用 migration
+uv run ruff check .                        # lint
+uv run ruff format .                       # 格式化
 ```
 
-建立 App：
+多數指令在根目錄有對應的 `task` 任務，用 `task --list` 查看。
 
-```bash
-uv run python manage.py startapp <app_name>
-```
-
-建立 Migration：
-
-```bash
-uv run python manage.py makemigrations
-```
-
-執行 Migration：
-
-```bash
-uv run python manage.py migrate
-```
-
-執行測試：
-
-```bash
-uv run pytest
-```
-
-Ruff：
-
-```bash
-uv run ruff check .
-uv run ruff format .
-```
-
----
-
-## 專案結構
+## 結構
 
 ```text
 backend/
-├── apps/
 ├── config/
+│   └── settings/     base / development / testing / production
+├── apps/             每個功能領域一個 Django app
+│   └── parts/
 ├── manage.py
-├── pyproject.toml
-└── uv.lock
+└── pyproject.toml
 ```
 
----
+## 現況
 
-## Settings
+目前只有設定骨架與空的 `parts` app，資料庫暫時使用 SQLite。雙資料庫設定、環境變數、測試設定會在里程碑 M1 完成。
 
-Settings 採用多環境配置。
+## 設計文件
 
-```text
-config/settings/
-
-base.py
-development.py
-testing.py
-production.py
-```
-
----
-
-## Architecture
-
-Business Logic 應集中於 Service Layer。
-
-Model 主要負責：
-
-- Database Mapping
-- QuerySet
-- Manager
-
-API Schema 與 Validation 將採用獨立 Schema Layer。
-
----
-
-## 文件
-
-詳細設計請參閱：
-
-```
-docs/
-```
+- [系統架構](../docs/architecture.md)
+- [零件功能](../docs/domains/parts.md)
+- [登入與權限](../docs/domains/auth.md)

@@ -1,762 +1,100 @@
-# Parts App Design
+# Parts
 
-## 1. Domain 定位
+零件資料的查詢與維護，是 MVP 的主體。
 
-Parts App 負責管理 EE Platform 中的零件資料相關功能。
+## 資料來源
 
-主要責任：
+公司既有的零件資料庫，在 SQL Server 上，Capture CIS 也在使用。
 
-- 零件資料查詢
-- 零件分類管理
-- 零件欄位呈現
-- 零件資料維護
-- 零件相關規則驗證
+目前已知：
 
-Parts App 是 EE Platform 初期主要開發的 Domain。
+- 所有零件類型共用一張資料表，約 130 多個欄位。
+- 用一個欄位區分零件類型（先前記錄為 `table_name`，值如 `R`、`C`、`L`、`IC`）。
+- 資料庫上已有 trigger 記錄修改。
 
----
+確切的表名、欄位名與型別尚未取得，見 [open-questions.md](../open-questions.md)。
 
-## 2. Database 架構
+## 原則
 
-目前零件資料來源為既有 Microsoft SQL Server Database。
+- 平台不更動零件庫的結構：不加欄位、不拆表、不建索引。
+- 零件類型以資料庫中的類型欄位為準，平台不另外維護一份分類。
+- 資料庫裡的零件資料是唯一來源，平台不複製一份。
 
-Database 中已有一張主要零件資料表，包含所有種類零件的完整欄位。
+## Model
 
-概念：
+一個 `Part` model 對應整張零件表，設定 `managed = False`，Django 不會為它產生 migration。
 
-```text
-Existing MSSQL
+欄位定義由實際 schema 產生（`inspectdb`）後再整理。不為各零件類型建立個別的 model。
 
-Parts Table
-│
-├── R
-├── C
-├── L
-├── IC
-└── Other Parts
-```
+## Part Configuration
 
-目前資料設計：
+零件表有 130 多欄，但每種零件只用到其中一部分：電阻看阻值、誤差、功率；電容看容值、耐壓。Part Configuration 是每種零件類型一份的設定，內容包含：
 
-- 所有零件共用同一張 Table
-- 欄位數量約 130+
-- 不同零件類型透過欄位區分
+| 設定 | 用途 |
+|---|---|
+| 類型代碼與顯示名稱 | 對應類型欄位的值，例如 `R` 顯示為「電阻」 |
+| 列表欄位 | 表格要顯示哪些欄位、順序、標題 |
+| 可搜尋欄位 | 關鍵字搜尋會比對哪些欄位 |
+| 可篩選欄位 | 哪些欄位提供篩選 |
+| 可編輯欄位 | 哪些欄位允許在平台上修改 |
 
-既有 CIS 系統亦使用此資料來源。
+設定寫在後端程式碼中。前端透過 API 取得設定後動態產生表格與表單，不在前端寫死欄位。
 
-因此：
+新增一種零件類型只需要加一份設定。
 
-- 不重新設計 Database Schema
-- 不任意拆分既有資料表
-- Django 主要負責 Application Layer 的資料存取與管理
+日後若需要讓管理者在網頁上調整設定，再把它搬進平台庫。
 
----
+## 查詢
 
-## 3. Part Type 定義
+API 規劃（路徑為暫定）：
 
-Part Type 的來源為 Database 中既有欄位。
+| API | 說明 |
+|---|---|
+| `GET /api/parts/types/` | 所有零件類型與各自的 Configuration |
+| `GET /api/parts/?type=R&search=...&<欄位>=...` | 列表，支援搜尋、篩選、分頁、排序 |
+| `GET /api/parts/{id}/` | 單筆的完整資料 |
 
-目前使用：
+- 列表只回傳該類型設定的列表欄位，加上備註欄位。
+- 篩選與排序只接受設定中列出的欄位，其他一律拒絕。
+- 一律分頁。
 
-```text
-table_name
-```
+### 備註懸停
 
-作為零件分類依據。
+列表 API 的每一筆資料直接包含備註欄位，前端在滑鼠懸停時顯示，不另外發請求。
 
-例如：
+## 編輯
 
-```text
-table_name
+| API | 說明 |
+|---|---|
+| `PATCH /api/parts/{id}/` | 修改單筆零件 |
 
-R
-    → Resistor
+- 需要 `parts.change_part` 權限，見 [auth.md](auth.md)。
+- 只接受該類型設定中的可編輯欄位，其他欄位的修改會被拒絕。
+- 驗證在後端執行，前端的檢查只是為了使用體驗。
+- 修改與寫入修改紀錄在同一個 service 函式中完成。
 
-C
-    → Capacitor
+### 與 CIS 並存
 
-L
-    → Inductor
+平台與 CIS 改的是同一張表。CIS 的使用方式與權限維持不變。
 
-IC
-    → Integrated Circuit
-```
+兩邊同時修改同一筆資料時，後寫入的會蓋掉先寫入的。MVP 的處理方式：送出修改時帶上讀取當時的值，後端發現資料庫中的值已經不同就拒絕並請使用者重新載入。
 
-Database 中的 `table_name` 是 Part Type 的 Source of Truth。
+### 修改紀錄
 
-Application Layer 不建立另一套獨立的零件分類資料。
+平台用專用帳號寫入資料庫，所以既有的 trigger 記到的修改人會是那個帳號，而不是實際操作的人。
 
----
+因此平台在平台庫自己記錄每次修改：
 
-## 4. Django Model 設計
+- 操作者
+- 時間
+- 零件識別
+- 每個被修改欄位的舊值與新值
 
-Parts App 使用單一主要 Model 對應既有 Parts Table。
+既有的 trigger 繼續運作，平台不依賴也不修改它。
 
-概念：
+## MVP 不做
 
-```text
-Part Model
-
-        │
-        ▼
-
-Existing MSSQL Parts Table
-```
-
-Model 負責：
-
-- 對應 Database 欄位
-- 提供資料存取介面
-- 作為其他 Application Layer 的資料來源
-
-概念：
-
-```python
-class Part(models.Model):
-    ...
-
-    class Meta:
-        managed = False
-```
-
-由於 Database 已由既有系統管理，因此不使用 Django Migration 控制此 Table。
-
----
-
-## 5. Proxy Model 設計
-
-不同種類零件使用 Proxy Model 表示。
-
-Proxy Model 不建立新的 Database Table。
-
-用途：
-
-- 提供不同零件類型的語意化 Model
-- 封裝不同零件類型的操作方式
-- 提供更清楚的 Application Interface
-
-概念：
-
-```text
-                Part
-
-                 │
-
-     ┌───────────┼───────────┐
-
-     ▼           ▼           ▼
-
- Resistor    Capacitor    Inductor
-
- Proxy         Proxy        Proxy
-```
-
-例如：
-
-```python
-class Resistor(Part):
-
-    class Meta:
-        proxy = True
-```
-
-Proxy Model 最終仍然操作同一張 Parts Table。
-
----
-
-## 6. Manager / QuerySet 設計
-
-不同 Part Type 可以透過 Manager 或 QuerySet 封裝查詢邏輯。
-
-例如：
-
-```text
-Resistor.objects.all()
-```
-
-代表：
-
-```sql
-SELECT *
-FROM Parts
-WHERE table_name = 'R'
-```
-
-概念：
-
-```text
-Part Manager
-
-        │
-
-        ├── Resistor Manager
-        │
-        ├── Capacitor Manager
-        │
-        └── Other Part Manager
-```
-
-Manager 負責：
-
-- 常用 Query
-- Part Type 篩選
-- 共用查詢邏輯
-
-避免將查詢條件散落於 API 或 Frontend。
-
----
-
-## 7. Part Configuration
-
-不同種類零件雖然共用 Database Table，但前端呈現與操作需求不同。
-
-因此建立 Part Configuration 管理不同 Part Type 的設定。
-
-Configuration 負責：
-
-- 顯示欄位
-- 可搜尋欄位
-- Filter 定義
-- Part Type 相關設定
-
-概念：
-
-```text
-Part Configuration
-
-        │
-
-        ├── Resistor Config
-        │
-        ├── Capacitor Config
-        │
-        └── IC Config
-```
-
-例如：
-
-```text
-Resistor
-
-Display Fields
-
-- Part Number
-- Resistance
-- Tolerance
-- Power
-- Package
-
-
-Filter Fields
-
-- Part Number
-- Resistance
-- Manufacturer
-```
-
-Frontend 不直接定義欄位規則。
-
-Frontend 根據 Backend 提供的 Configuration 動態呈現。
-
----
-
-## 8. Serializer / Schema 設計
-
-Schema 用於定義 API 層資料格式。
-
-Schema 不代表 Database 結構。
-
-責任：
-
-- 定義 API Response 格式
-- 定義 API Request 格式
-- 控制資料暴露範圍
-- 提供 API Documentation 所需資訊
-
-概念：
-
-```text
-Database Model
-
-        │
-
-        ▼
-
-Serializer / Schema
-
-        │
-
-        ▼
-
-Frontend API Data
-```
-
-例如：
-
-Database：
-
-```text
-130+ columns
-```
-
-API Response：
-
-```json
-{
-    "part_number": "...",
-    "description": "...",
-    "package": "..."
-}
-```
-
-API 不需要直接暴露完整 Database 欄位。
-
----
-
-## 9. Read / Query Flow
-
-初期主要功能為零件查詢。
-
-流程：
-
-```text
-User
-
- │
-
- ▼
-
-Frontend
-
- │
-
- ▼
-
-Parts API
-
- │
-
- ▼
-
-Part Service
-
- │
-
- ▼
-
-Manager / QuerySet
-
- │
-
- ▼
-
-Part Model
-
- │
-
- ▼
-
-MSSQL Database
-```
-
-查詢流程由 Backend 控制。
-
-Frontend 不直接組 Database Query。
-
----
-
-## 10. Filter 與 Search 設計
-
-零件查詢支援：
-
-- Part Type 選擇
-- 關鍵字搜尋
-- 欄位 Filter
-
-Filter 定義由 Backend 管理。
-
-概念：
-
-```text
-Frontend
-
-選擇：
-
-Resistor
-
-        │
-
-        ▼
-
-Backend
-
-讀取 Resistor Configuration
-
-        │
-
-        ▼
-
-建立 Query
-
-        │
-
-        ▼
-
-Database
-```
-
-初期可以允許較廣泛的搜尋欄位。
-
-後續可依使用需求限制或優化。
-
----
-
-## 11. Validation 設計
-
-Validation 負責檢查資料是否符合零件規則。
-
-例如：
-
-- 欄位格式
-- 欄位必要性
-- 零件規格限制
-
-Validation 與 Database Model 分離。
-
-概念：
-
-```text
-Input Data
-
-    │
-
-    ▼
-
-Validator
-
-    │
-
-    ▼
-
-Valid Data
-
-    │
-
-    ▼
-
-Service
-```
-
----
-
-## 12. Service Layer 設計
-
-Service 負責具有業務意義的操作。
-
-避免將複雜邏輯放入：
-
-- View
-- Serializer
-- Model
-
-概念：
-
-```text
-API View
-
-    │
-
-    ▼
-
-Service
-
-    │
-
-    ▼
-
-Model / Database
-```
-
-未來資料維護功能：
-
-```text
-User
-
- │
-
- ▼
-
-Edit Request
-
- │
-
- ▼
-
-Part Service
-
- │
-
- ▼
-
-Validation
-
- │
-
- ▼
-
-Database Update
-```
-
-Service 作為未來新增：
-
-- 編輯
+- 新增、刪除零件
 - 批次修改
-- 提交
-- Audit
-
-等功能的主要入口。
-
----
-
-## 13. Data Maintenance Direction
-
-Parts App 未來支援零件資料維護。
-
-預期流程：
-
-```text
-User
-
- │
-
- ▼
-
-Frontend Edit
-
- │
-
- ▼
-
-API
-
- │
-
- ▼
-
-Schema Validation
-
- │
-
- ▼
-
-Business Validation
-
- │
-
- ▼
-
-Part Service
-
- │
-
- ▼
-
-Database Update
-```
-
-維護流程需考量：
-
-- 權限控制
-- 修改驗證
-- 修改紀錄
-- 批次提交
-
-詳細流程於實作階段定義。
-
----
-
-## 14. Audit Log Direction
-
-目前 Database 已有 Trigger-based Log。
-
-未來 Application Layer 建立維護功能後：
-
-Application 可以負責：
-
-- 使用者資訊
-- 修改內容
-- 修改原因
-- 提交流程
-
-Database Log 與 Application Audit 可以依需求並存或逐步整合。
-
----
-
-## 15. Parts App 初始資料夾結構
-
-建議：
-
-```text
-apps/
-└── parts/
-
-    ├── models.py
-    │
-    ├── managers.py
-    │
-    ├── proxies.py
-    │
-    ├── config.py
-    │
-    ├── serializers.py
-    │
-    ├── validators.py
-    │
-    ├── services.py
-    │
-    ├── views.py
-    │
-    ├── urls.py
-    │
-    └── ...
-```
-
-責任：
-
-```text
-models.py
-
-Database Model
-
-
-proxies.py
-
-Part Type Proxy Models
-
-
-managers.py
-
-Query Logic
-
-
-config.py
-
-Part Type Configuration
-
-
-serializers.py
-
-API Schema
-
-
-validators.py
-
-Data Validation
-
-
-services.py
-
-Business Logic
-
-
-views.py
-
-API Interface
-```
-
----
-
-## 16. Parts App 架構總覽
-
-```text
-                    Parts App
-
-                        │
-
-                    Part Model
-
-                        │
-
-              Existing MSSQL Table
-
-
-                        │
-
-        ┌───────────────┴───────────────┐
-
-        ▼                               ▼
-
-  Proxy Models                  Part Configuration
-
-        │                               │
-
-        │                               ├── Display Fields
-        │                               ├── Filter Fields
-        │                               └── Rules
-
-        │
-
-        ▼
-
-   Managers / QuerySets
-
-                        │
-
-                        ▼
-
-                    Services
-
-                        │
-
-                        ▼
-
-              Serializers / Schema
-
-                        │
-
-                        ▼
-
-                    API
-
-                        │
-
-                        ▼
-
-                  Frontend
-```
-
----
-
-## 17. 設計原則
-
-### Database Compatibility
-
-保持與既有 CIS Database 相容。
-
-### Single Source of Truth
-
-Database 中的零件資料為主要來源。
-
-### Separation of Responsibility
-
-Model、Configuration、Schema、Service 各自負責不同層級。
-
-### Dynamic Presentation
-
-零件欄位呈現由 Backend Configuration 控制。
-
-### API First
-
-Frontend 不直接依賴 Database 結構。
-
-### Extensible
-
-未來可加入：
-
-- 零件維護
-- 批次修改
-- Audit
-- BOM 使用分析
-- 零件規則檢查
-
-而不需要重新設計核心架構。
+- 修改審核流程
+- Symbol / Footprint 圖形，見 [cad-assets.md](cad-assets.md)
