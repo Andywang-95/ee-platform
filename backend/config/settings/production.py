@@ -15,13 +15,3 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host.strip()
 ]
-
-
-# Placeholder until the dual-database setup lands in M1; production will
-# connect to SQL Server using connection settings from the environment.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
