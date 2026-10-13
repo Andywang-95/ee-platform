@@ -21,12 +21,12 @@ task up      # 啟動所有服務
 
 | 網址 | 內容 |
 |---|---|
-| http://localhost:5173 | 前端 |
+| http://localhost:5173 | 前端：零件查詢頁 |
 | http://localhost:8000/api/docs/ | API 文件（Swagger UI） |
 | http://localhost:8000/api/health/ | 健康檢查 |
 | http://localhost:8000/admin/ | Django Admin |
 
-前端首頁會顯示後端與兩個資料庫的連線狀態，以及零件筆數。四項都正常就代表環境沒問題。
+前端首頁能看到零件列表就代表環境沒問題。看不到的話先開健康檢查的網址，它會回報兩個資料庫是否連得上。
 
 ## 服務
 
@@ -52,6 +52,7 @@ task logs              # 看所有服務的輸出
 task ci                # 所有檢查，commit 前要通過
 task test              # 前後端測試
 task format            # 前後端自動格式化
+task gen-api           # 後端 API 變動後，重新產生前端的 API 型別
 task makemigrations    # 建立 migration
 task migrate           # 套用 migration
 task createsuperuser   # 建立 Django 管理者帳號
@@ -88,7 +89,9 @@ task build             # 改了依賴或 Dockerfile 之後重建 image
 
 ## 登入
 
-開發環境使用 Django 本地帳號，用 `task createsuperuser` 建立。公司環境的登入方式見 [domains/auth.md](domains/auth.md)。
+登入功能在 M3 實作。在那之前開發環境的 API 不需要登入就能呼叫，這個設定只存在於 `config/settings/development.py`，測試與正式環境的設定仍然要求登入。
+
+Django Admin 使用 Django 本地帳號，用 `task createsuperuser` 建立。公司環境的登入方式見 [domains/auth.md](domains/auth.md)。
 
 ## 環境變數
 

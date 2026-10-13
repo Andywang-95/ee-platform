@@ -30,6 +30,7 @@
 | 登入 | 可抽換的登入後端 | [ADR-0005](adr/0005-auth-pluggable-backends.md) |
 | 部署 | 專用 PC 上的 Docker Compose | [ADR-0006](adr/0006-deployment-compose-on-dedicated-pc.md) |
 | CAD 圖形 | 離線批次匯出 | [ADR-0007](adr/0007-cad-assets-offline-export.md) |
+| 前端套件 | Ant Design + TanStack Query | [ADR-0008](adr/0008-frontend-libraries.md) |
 
 ## 資料庫分工
 
@@ -71,6 +72,7 @@ ee-platform/
 |---|---|
 | `models.py` | 資料表對應 |
 | `serializers.py` | API 的輸入輸出格式與驗證 |
+| `queries.py` | 可重複使用的查詢，例如「依類型、關鍵字、篩選條件列出零件」 |
 | `services.py` | 有業務意義的操作，例如「編輯零件並寫入修改紀錄」 |
 | `views.py` / `urls.py` | HTTP 層，保持精簡 |
 

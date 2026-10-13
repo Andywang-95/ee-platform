@@ -32,6 +32,9 @@ backend/
 │   └── urls.py
 ├── apps/               每個功能領域一個 Django app
 │   └── parts/
+│       ├── configuration.py   各零件類型的 Part Configuration
+│       ├── queries.py         零件查詢
+│       └── views.py / urls.py
 ├── tests/              跨 app 的測試
 ├── conftest.py         測試共用設定
 ├── Dockerfile          開發用 image
@@ -57,10 +60,11 @@ backend/
 | 路徑 | 內容 |
 |---|---|
 | `/api/health/` | 健康檢查，回報兩個資料庫的連線狀態 |
+| `/api/parts/` | 零件查詢，見 [零件功能](../docs/domains/parts.md) |
 | `/api/schema/` | OpenAPI 文件 |
 | `/api/docs/` | Swagger UI |
 
-API 預設需要登入，不需要登入的 view 要明確宣告。
+API 預設需要登入，不需要登入的 view 要明確宣告。登入功能在 M3 實作，在那之前開發環境的設定暫時允許未登入的請求。
 
 ## 設計文件
 

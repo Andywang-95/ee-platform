@@ -60,7 +60,7 @@
 
 各檔案的責任見 [architecture.md](architecture.md) 的「後端分層」。
 
-- 只讀取資料的 API 可以由 view 直接查詢。
+- 只讀取資料的 API 可以由 view 直接查詢。查詢條件較複雜或會被重複使用時，寫成 `queries.py` 裡的函式。
 - 會改動資料的操作一律寫成 `services.py` 裡的函式，view 只負責解析請求、呼叫 service、回傳結果。
 - service 函式以動詞開頭，參數用 keyword-only，操作者明確傳入：`update_part(*, part, changes, user)`。
 - service 不接收 `request`，這樣測試與日後的背景工作都能直接呼叫。
@@ -107,14 +107,18 @@
 
 ## 前端
 
-元件庫、資料請求、路由等套件在 M2 選定後補上對應的慣例。
+套件的選擇見 [ADR-0008](adr/0008-frontend-libraries.md)。
 
 - TypeScript，不使用 `any` 規避型別。
 - 測試檔與被測的檔案放在一起，檔名為 `<對象>.test.ts`。
 - 測試工具從 `vite-plus/test` 匯入，設定工具從 `vite-plus` 匯入，不直接從 `vitest` 或 `vite` 匯入。
-- 呼叫 API 一律用相對路徑（`/api/...`），不寫死主機位址。
+- 呼叫 API 一律經過 `src/api/client.ts`，用相對路徑，不寫死主機位址，也不在元件裡直接呼叫 `fetch`。
+- 每個功能領域的 API 函式與型別放在該領域的 `api.ts`。
+- 伺服器資料一律用 TanStack Query 的 `useQuery` 取得，不用 `useEffect` 加 `useState` 自己管理載入狀態。query key 以領域名稱開頭，例如 `["parts", "list", query]`。
+- 介面元件用 Ant Design，不自己寫樣式能解決的事就不寫 CSS。
+- 後端 API 有變動時執行 `task gen-api` 重新產生 `src/api/schema.d.ts`，這個檔案不手動修改。
 - 依功能領域分目錄（`parts`、`bom`），領域之間不互相 import 內部檔案。
-- API 的型別由後端的 OpenAPI 文件產生，不手寫。
+- API 的型別由後端的 OpenAPI 文件產生，不手寫。零件資料列是例外：欄位隨類型不同，型別是以欄位名稱為 key 的物件。
 - 零件表格與表單的欄位來自後端的 Part Configuration。
 - lint 與格式化用 Vite+ 內建工具。
 

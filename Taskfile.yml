@@ -78,6 +78,20 @@ tasks:
     cmds:
       - docker compose exec backend python manage.py seed_parts
 
+  gen-api:
+    desc: Regenerate frontend API types from the backend OpenAPI document
+    cmds:
+      - task: export-openapi
+      # Run through npx because its TypeScript peer range conflicts with the project's.
+      - "{{.FRONTEND}} npx -y openapi-typescript@7.13.0 openapi.yaml -o src/api/schema.d.ts"
+      - rm frontend/openapi.yaml
+
+  export-openapi:
+    internal: true
+    dir: backend
+    cmds:
+      - uv run python manage.py spectacular --settings config.settings.testing --file ../frontend/openapi.yaml
+
   lint:
     desc: Lint backend and frontend
     cmds:
@@ -143,6 +157,8 @@ tasks:
       - uv run ruff check .
       - uv run ruff format --check .
       - uv run pytest
+      # Fails when the OpenAPI document cannot be generated cleanly.
+      - uv run python manage.py spectacular --settings config.settings.testing --validate --fail-on-warn --file /dev/null
 
   ci-frontend:
     desc: Frontend lint, type-check, format check, tests and build

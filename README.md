@@ -2,7 +2,7 @@
 
 給 EE 使用的內部工具平台，目標是把日常會用到的工具集中在一個網站：查零件、BOM 工具、線路檢查，之後再接上 AI。
 
-目前是個人專案，開發環境已建立（里程碑 M1），接下來實作零件查詢。MVP 完成並實測後才會評估部署到公司。
+目前是個人專案，零件查詢已完成（里程碑 M2），接下來實作登入與編輯。MVP 完成並實測後才會評估部署到公司。
 
 ## MVP 範圍
 
@@ -18,7 +18,7 @@ Symbol / Footprint 圖形顯示排在 MVP 之後。完整規劃見 [docs/roadmap
 
 | 層 | 選擇 |
 |---|---|
-| 前端 | React、TypeScript、Vite+ |
+| 前端 | React、TypeScript、Vite+、Ant Design、TanStack Query |
 | 後端 | Python 3.13、Django 5.2、Django REST Framework、drf-spectacular |
 | 資料庫 | Microsoft SQL Server（既有零件庫 + 平台專用庫） |
 | 執行環境 | Docker Compose |
