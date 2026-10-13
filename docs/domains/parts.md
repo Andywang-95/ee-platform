@@ -12,7 +12,7 @@
 - 用一個欄位區分零件類型（先前記錄為 `table_name`，值如 `R`、`C`、`L`、`IC`）。
 - 資料庫上已有 trigger 記錄修改。
 
-確切的表名、欄位名與型別尚未取得，見 [open-questions.md](../open-questions.md)。
+確切的表名、欄位名與型別尚未取得，見 [open-questions.md](../open-questions.md)。取得之前開發所用的假設記錄在 [parts-schema-assumptions.md](parts-schema-assumptions.md)。
 
 ## 原則
 

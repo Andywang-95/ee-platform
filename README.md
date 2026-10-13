@@ -42,6 +42,7 @@ task backend
 | [docs/roadmap.md](docs/roadmap.md) | 願景、MVP 範圍、里程碑、後續功能 |
 | [docs/architecture.md](docs/architecture.md) | 系統組成、資料庫分工、目錄結構 |
 | [docs/development.md](docs/development.md) | 本機開發環境 |
+| [docs/conventions.md](docs/conventions.md) | API、後端、測試、Git 的慣例 |
 | [docs/deployment.md](docs/deployment.md) | 公司內部署方式 |
 | [docs/open-questions.md](docs/open-questions.md) | 進公司前要確認的事項 |
 | [docs/domains/parts.md](docs/domains/parts.md) | 零件查詢與維護 |

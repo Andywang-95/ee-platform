@@ -2,6 +2,17 @@
 
 進公司部署（M4）前要確認的事項。確認後把結果寫回對應的文件，並從這裡移除。
 
+## 建議的確認順序
+
+前三項自己就能查，而且會決定後面要向 IT 提出什麼，所以先做。
+
+1. 零件表的實際結構與資料筆數。M2 之後的開發都依賴它，是最早用得到的資訊。
+2. SQL Server 接受哪種驗證。決定資料庫連線走哪一條路。
+3. 目前的連線是 Kerberos 還是 NTLM。只有上一項的結果是「只接受 Windows 驗證」時才需要。
+4. 向 IT 申請服務帳號與平台專用 database。沒有這兩項就無法部署。
+5. 主機作業系統與主機名稱。決定無感登入的做法。
+6. 其餘項目。
+
 ## 可以自己先查的
 
 ### SQL Server 接受哪種驗證
@@ -15,6 +26,8 @@ SELECT SERVERPROPERTY('IsIntegratedSecurityOnly');
 - `0`：有開混合驗證，可以申請 SQL 帳號（連線方式 1）。
 - `1`：只接受 Windows 驗證，要走 AD 服務帳號 + Kerberos（連線方式 2）。
 
+各連線方式的內容見 [deployment.md](deployment.md) 的「資料庫連線」。
+
 ### 目前的連線是 Kerberos 還是 NTLM
 
 ```sql
@@ -27,12 +40,15 @@ SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID;
 
 ### 零件表的實際結構
 
+開發時採用的假設列在 [domains/parts-schema-assumptions.md](domains/parts-schema-assumptions.md)，可以直接拿它逐項核對。
+
 - 資料表名稱、欄位名稱與型別。
 - 區分零件類型的欄位（先前記錄為 `table_name`）有哪些值。
 - 備註欄位的名稱。
 - 存放 symbol 與 footprint 名稱的欄位，以及內容格式。
 - 主鍵是哪個欄位。
 - CIS 是直接讀資料表，還是透過 view。
+- 資料筆數的量級，以及各零件類型大約各有多少筆。這會影響搜尋與分頁的做法。
 
 ### 現有的 trigger log
 
@@ -45,8 +61,8 @@ SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID;
 |---|---|
 | 能否申請一個非個人的服務帳號 | 資料庫連線與無感登入的前提 |
 | 能否在現有 SQL Server 上新建平台專用 database | 不行的話要另找地方放平台資料 |
-| 專用電腦能否安裝 Linux 並接上內網 | 決定主機作業系統 |
-| 專用電腦若用 Windows，是否會加入網域 | 決定無感登入能否用 IIS 處理 |
+| 專用電腦能否安裝 Linux 並接上內網 | 決定主機作業系統，見 [deployment.md](deployment.md) |
+| 專用電腦若用 Windows，是否會加入網域 | 決定無感登入能否用 IIS 處理，見 [domains/auth.md](domains/auth.md) |
 | 能否給一個固定的主機名稱（DNS） | 使用者連線與無感登入 |
 | 能否註冊 HTTP SPN | 用 Kerberos 做無感登入時需要 |
 | 公司內有沒有 Git 伺服器，或是否允許自架 | Jenkins 從哪裡取得程式碼 |

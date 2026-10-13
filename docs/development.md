@@ -16,6 +16,7 @@
 ```bash
 task backend-install   # 安裝後端依賴
 task backend           # 啟動 Django 開發伺服器
+task test-backend      # 執行後端測試
 task lint-backend      # Ruff 檢查
 task format-backend    # Ruff 格式化
 task ci                # CI 會執行的檢查
@@ -55,13 +56,17 @@ Apple Silicon 的注意事項：微軟的 SQL Server image 只有 x86 版本，�
 
 ### 環境變數
 
-資料庫位址、帳密、登入方式等設定都來自環境變數。repo 內提供 `.env.example`，實際的 `.env` 不進版控。
+資料庫位址、帳密、登入方式等設定都來自環境變數。repo 根目錄的 `.env.example` 列出目前用到的變數，實際的 `.env` 不進版控。
+
+在 compose 環境建立之前沒有東西會自動讀取 `.env`。開發與測試設定都有預設值，不設定任何變數也能執行。
 
 ## 程式風格
+
+完整慣例見 [conventions.md](conventions.md)。
 
 - 後端：Ruff，設定在 `backend/pyproject.toml`（行寬 100、單引號）。
 - 前端：Vite+ 內建的 lint 與 formatter，不另外裝 ESLint 或 Prettier。
 
 ## CI
 
-`task ci` 是 CI 的唯一入口，本機與 Jenkins 執行同一個指令。目前只包含後端的 lint 與格式檢查，M1 加入測試與前端。
+`task ci` 是 CI 的唯一入口，本機與 Jenkins 執行同一個指令。目前包含後端的 lint、格式檢查與測試，M1 加入前端。commit 前要通過。
