@@ -1,67 +1,88 @@
 version: "3"
 
+vars:
+  # Frontend tooling runs inside its container, so the host needs no Node.js.
+  FRONTEND: docker compose run --rm --no-deps frontend
+
 tasks:
   setup:
-    desc: Install all dependencies
-    deps:
-      - backend-install
-      - frontend-install
+    desc: Prepare a fresh checkout (.env, backend dependencies, images)
+    cmds:
+      - cmd: cp .env.example .env
+        silent: true
+      - task: backend-install
+      - docker compose build
+    status:
+      - test -f .env
+      - test -d backend/.venv
 
   backend-install:
-    desc: Install backend dependencies
+    desc: Install backend dependencies on the host (for lint, tests, editor)
     dir: backend
     cmds:
       - uv sync
 
-  # Frontend tasks are placeholders until the React project is created (M1);
-  # they will switch to Vite+ (vp) commands then.
-  frontend-install:
-    desc: Install frontend dependencies
-    dir: frontend
+  build:
+    desc: Rebuild images (after changing dependencies or a Dockerfile)
     cmds:
-      - pnpm install
+      - docker compose build
+      # node_modules lives in a volume that outlives the image; refresh it.
+      - "{{.FRONTEND}} npm ci"
 
-  backend:
-    desc: Start Django
-    dir: backend
+  up:
+    desc: Start the development environment
     cmds:
-      - uv run python manage.py runserver
+      - docker compose up -d
+      - echo "Frontend http://localhost:5173  API docs http://localhost:8000/api/docs/"
 
-  frontend:
-    desc: Start frontend dev server
-    dir: frontend
+  down:
+    desc: Stop the development environment (data is kept)
     cmds:
-      - pnpm dev
+      - docker compose down
+
+  logs:
+    desc: Follow logs of all services
+    cmds:
+      - docker compose logs -f
+
+  reset-db:
+    desc: Delete the development databases and recreate them with fake data
+    prompt: This deletes all data in the development SQL Server. Continue?
+    cmds:
+      - docker compose down
+      - docker volume rm ee-platform_mssql-data
+      - docker compose up -d
 
   migrate:
-    desc: Django Migration
-    dir: backend
+    desc: Apply Django migrations
     cmds:
-      - uv run python manage.py migrate
+      - docker compose exec backend python manage.py migrate
 
   makemigrations:
     desc: Create Django migrations
-    dir: backend
     cmds:
-      - uv run python manage.py makemigrations
+      - docker compose exec backend python manage.py makemigrations
 
   shell:
     desc: Django shell
-    dir: backend
     cmds:
-      - uv run python manage.py shell
+      - docker compose exec backend python manage.py shell
 
   createsuperuser:
     desc: Create a Django superuser
-    dir: backend
     cmds:
-      - uv run python manage.py createsuperuser
+      - docker compose exec backend python manage.py createsuperuser
+
+  seed-parts:
+    desc: Replace the development parts table with fresh fake data
+    cmds:
+      - docker compose exec backend python manage.py seed_parts
 
   lint:
     desc: Lint backend and frontend
-    deps:
-      - lint-backend
-      - lint-frontend
+    cmds:
+      - task: lint-backend
+      - task: lint-frontend
 
   lint-backend:
     desc: Lint backend
@@ -70,16 +91,15 @@ tasks:
       - uv run ruff check .
 
   lint-frontend:
-    desc: Lint frontend
-    dir: frontend
+    desc: Lint, type-check and check formatting of frontend
     cmds:
-      - pnpm lint
+      - "{{.FRONTEND}} vp check"
 
   format:
     desc: Format backend and frontend
-    deps:
-      - format-backend
-      - format-frontend
+    cmds:
+      - task: format-backend
+      - task: format-frontend
 
   format-backend:
     desc: Format backend
@@ -88,10 +108,15 @@ tasks:
       - uv run ruff format .
 
   format-frontend:
-    desc: Format frontend
-    dir: frontend
+    desc: Format frontend and apply safe lint fixes
     cmds:
-      - pnpm format
+      - "{{.FRONTEND}} vp check --fix"
+
+  test:
+    desc: Run backend and frontend tests
+    cmds:
+      - task: test-backend
+      - task: test-frontend
 
   test-backend:
     desc: Run backend tests
@@ -99,12 +124,29 @@ tasks:
     cmds:
       - uv run pytest
 
-  # Single entry point for CI (local and Jenkins). Backend only for now;
-  # frontend checks are added in M1.
+  test-frontend:
+    desc: Run frontend tests
+    cmds:
+      - "{{.FRONTEND}} vp test run"
+
+  # Single entry point for CI (local and Jenkins).
   ci:
     desc: Run all CI checks
+    cmds:
+      - task: ci-backend
+      - task: ci-frontend
+
+  ci-backend:
+    desc: Backend lint, format check and tests
     dir: backend
     cmds:
       - uv run ruff check .
       - uv run ruff format --check .
       - uv run pytest
+
+  ci-frontend:
+    desc: Frontend lint, type-check, format check, tests and build
+    cmds:
+      - "{{.FRONTEND}} vp check"
+      - "{{.FRONTEND}} vp test run"
+      - "{{.FRONTEND}} sh -c 'tsc -b && vp build'"

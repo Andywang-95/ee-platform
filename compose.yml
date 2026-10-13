@@ -1,0 +1,79 @@
+# Development environment. Production connects to the company SQL Server
+# instead of the mssql service here.
+name: ee-platform
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    # Microsoft publishes x86 images only; Apple Silicon runs this emulated.
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run "task setup" to create .env}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Runs once per `up`: creates the two databases and the parts table.
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run "task setup" to create .env}
+    volumes:
+      - ./dev/mssql:/init:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - /opt/mssql-tools18/bin/sqlcmd -C -b -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -i /init/init.sql
+    restart: "no"
+
+  backend:
+    build: ./backend
+    depends_on:
+      mssql-init:
+        condition: service_completed_successfully
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      MSSQL_HOST: mssql
+      MSSQL_USER: sa
+      MSSQL_PASSWORD: ${MSSQL_SA_PASSWORD:?Run "task setup" to create .env}
+      # The development server uses a self-signed certificate.
+      MSSQL_EXTRA_PARAMS: TrustServerCertificate=yes
+    command:
+      - sh
+      - -c
+      - python manage.py migrate && python manage.py seed_parts --if-empty && python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Keeps the Linux node_modules from the image instead of the host's.
+      - frontend-node-modules:/app/node_modules
+
+volumes:
+  mssql-data:
+  frontend-node-modules:
