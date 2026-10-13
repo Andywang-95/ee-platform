@@ -93,11 +93,18 @@ tasks:
     cmds:
       - pnpm format
 
-  # Single entry point for CI (local and Jenkins). Backend lint/format only for
-  # now; tests and frontend checks are added in M1.
+  test-backend:
+    desc: Run backend tests
+    dir: backend
+    cmds:
+      - uv run pytest
+
+  # Single entry point for CI (local and Jenkins). Backend only for now;
+  # frontend checks are added in M1.
   ci:
     desc: Run all CI checks
     dir: backend
     cmds:
       - uv run ruff check .
       - uv run ruff format --check .
+      - uv run pytest

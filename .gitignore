@@ -10,5 +10,17 @@ wheels/
 .venv
 node_modules
 
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+
 # sqlite
 *.sqlite3
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store

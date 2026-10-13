@@ -1,6 +1,11 @@
+import os
+
 from .base import *
 
 DEBUG = True
+
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-development-only')
 
 
 ALLOWED_HOSTS = []
