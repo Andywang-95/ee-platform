@@ -2,7 +2,7 @@
 
 給 EE 使用的內部工具平台，目標是把日常會用到的工具集中在一個網站：查零件、BOM 工具、線路檢查，之後再接上 AI。
 
-目前是個人專案，處於規劃完成、準備開始實作的階段。MVP 完成並實測後才會評估部署到公司。
+目前是個人專案，開發環境已建立（里程碑 M1），接下來實作零件查詢。MVP 完成並實測後才會評估部署到公司。
 
 ## MVP 範圍
 
@@ -22,18 +22,18 @@ Symbol / Footprint 圖形顯示排在 MVP 之後。完整規劃見 [docs/roadmap
 | 後端 | Python 3.13、Django 5.2、Django REST Framework、drf-spectacular |
 | 資料庫 | Microsoft SQL Server（既有零件庫 + 平台專用庫） |
 | 執行環境 | Docker Compose |
-| 開發工具 | uv、Ruff、Taskfile |
+| 開發工具 | uv、Ruff、npm、Taskfile |
 
 ## 快速開始
 
-目前只有後端骨架：
+需要 Docker Desktop、[Task](https://taskfile.dev/) 與 [uv](https://docs.astral.sh/uv/)。
 
 ```bash
-task backend-install
-task backend
+task setup   # 第一次使用
+task up      # 啟動後開啟 http://localhost:5173
 ```
 
-前端專案與 compose 環境會在里程碑 M1 建立，見 [docs/development.md](docs/development.md)。
+詳細說明見 [docs/development.md](docs/development.md)。
 
 ## 文件
 

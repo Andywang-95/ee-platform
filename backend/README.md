@@ -2,42 +2,65 @@
 
 Django + Django REST Framework，提供 REST API、資料存取與權限控管。
 
-## 需求
+## 執行
 
-- [uv](https://docs.astral.sh/uv/)（Python 版本由 `.python-version` 指定）
+後端在 container 內執行，從 repo 根目錄用 `task up` 啟動，見 [開發環境](../docs/development.md)。
 
-## 常用指令
-
-在 `backend/` 目錄下：
+lint、格式化與測試在主機上執行，不需要啟動任何服務：
 
 ```bash
-uv sync                                    # 安裝依賴
-uv run python manage.py runserver          # 啟動開發伺服器
-uv run python manage.py makemigrations     # 建立 migration
-uv run python manage.py migrate            # 套用 migration
-uv run pytest                              # 測試
-uv run ruff check .                        # lint
-uv run ruff format .                       # 格式化
+task backend-install   # 安裝依賴
+task test-backend      # 測試
+task lint-backend      # lint
+task format-backend    # 格式化
 ```
 
-多數指令在根目錄有對應的 `task` 任務，用 `task --list` 查看。
+Django 管理指令在 container 內執行，常用的有對應的 task（`task migrate`、`task makemigrations`、`task shell`、`task createsuperuser`）。其他指令：
+
+```bash
+docker compose exec backend python manage.py <指令>
+```
 
 ## 結構
 
 ```text
 backend/
 ├── config/
-│   └── settings/     base / development / testing / production
-├── apps/             每個功能領域一個 Django app
+│   ├── settings/       base / development / testing / production
+│   ├── db_routers.py   決定 model 走零件庫或平台庫
+│   ├── views.py        健康檢查
+│   └── urls.py
+├── apps/               每個功能領域一個 Django app
 │   └── parts/
-├── tests/            跨 app 的測試
+├── tests/              跨 app 的測試
+├── conftest.py         測試共用設定
+├── Dockerfile          開發用 image
 ├── manage.py
 └── pyproject.toml
 ```
 
-## 現況
+## 資料庫
 
-目前只有設定骨架與空的 `parts` app，資料庫暫時使用 SQLite。`SECRET_KEY` 與 `ALLOWED_HOSTS` 已改由環境變數提供，變數清單見根目錄的 `.env.example`。雙資料庫設定會在里程碑 M1 完成。
+兩個 database 在同一台 SQL Server 上：
+
+| Django 別名 | 內容 | 結構由誰管理 |
+|---|---|---|
+| `default` | 平台庫：帳號、權限、session、修改紀錄 | Django migration |
+| `parts` | 零件庫 | 既有流程，平台不更動 |
+
+`parts` app 中設了 `managed = False` 的 model 會被 router 導向零件庫。migration 不會套用到零件庫。
+
+連線設定來自環境變數，清單見根目錄的 `.env.example`。
+
+## API
+
+| 路徑 | 內容 |
+|---|---|
+| `/api/health/` | 健康檢查，回報兩個資料庫的連線狀態 |
+| `/api/schema/` | OpenAPI 文件 |
+| `/api/docs/` | Swagger UI |
+
+API 預設需要登入，不需要登入的 view 要明確宣告。
 
 ## 設計文件
 

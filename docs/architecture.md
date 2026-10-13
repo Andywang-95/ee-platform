@@ -40,7 +40,7 @@
 | Django 設定 | model 設 `managed = False` | 預設資料庫 |
 | 平台帳號權限 | 讀寫資料 | 完整權限 |
 
-用 Django 的 database router 決定每個 model 走哪個 database。migration 只會套用到平台庫，不會碰零件庫。
+用 Django 的 database router（`backend/config/db_routers.py`）決定每個 model 走哪個 database：`parts` app 中設了 `managed = False` 的 model 走零件庫，其餘走平台庫。migration 只會套用到平台庫，不會碰零件庫。
 
 ## 資料庫連線身分
 
@@ -55,9 +55,11 @@ ee-platform/
 │   ├── apps/            Django app，每個對應一個功能領域
 │   │   └── parts/
 │   └── libs/            不依賴 Django 的純 Python 模組（日後建立）
-├── frontend/            React 專案（M1 建立）
+├── frontend/            React 專案
+├── dev/                 只在開發環境使用的檔案
+│   └── mssql/           開發用資料庫的建立腳本
 ├── docs/
-├── compose.yml          （M1 建立）
+├── compose.yml          開發環境
 └── Taskfile.yml
 ```
 

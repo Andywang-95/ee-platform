@@ -88,7 +88,7 @@
 
 ### 位置與命名
 
-- 跨 app 的測試放 `backend/tests/`。
+- 跨 app 的測試放 `backend/tests/`，共用的 fixture 放 `backend/conftest.py`。
 - 各 app 的測試放 `backend/apps/<app>/tests/`。
 - `libs/` 的測試放 `backend/libs/<模組>/tests/`，不使用資料庫，不 import Django。
 - 檔名 `test_<對象>.py`，函式名 `test_<情境>_<預期結果>`。
@@ -107,9 +107,12 @@
 
 ## 前端
 
-專案在 M1 建立，以下只列已經決定的事，其餘在建立專案時補上。
+元件庫、資料請求、路由等套件在 M2 選定後補上對應的慣例。
 
 - TypeScript，不使用 `any` 規避型別。
+- 測試檔與被測的檔案放在一起，檔名為 `<對象>.test.ts`。
+- 測試工具從 `vite-plus/test` 匯入，設定工具從 `vite-plus` 匯入，不直接從 `vitest` 或 `vite` 匯入。
+- 呼叫 API 一律用相對路徑（`/api/...`），不寫死主機位址。
 - 依功能領域分目錄（`parts`、`bom`），領域之間不互相 import 內部檔案。
 - API 的型別由後端的 OpenAPI 文件產生，不手寫。
 - 零件表格與表單的欄位來自後端的 Part Configuration。

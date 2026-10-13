@@ -13,13 +13,15 @@
 從 repo 根目錄用 `task` 執行，完整清單用 `task --list` 查看。
 
 ```bash
-task ci              # lint、格式檢查、測試。commit 前必須通過
+task up              # 啟動開發環境（Docker Compose）
+task ci              # 前後端的 lint、格式檢查、測試。commit 前必須通過
 task test-backend    # 只跑後端測試
-task format-backend  # 自動格式化
-task backend         # 啟動 Django 開發伺服器
+task format          # 前後端自動格式化
 ```
 
-後端的其他指令在 `backend/` 下用 `uv run` 執行，不直接呼叫 `python` 或 `pip`。
+- 後端的 lint 與測試在主機上用 `uv run` 執行，不直接呼叫 `python` 或 `pip`。
+- Django 管理指令與所有前端工具在 container 內執行：`docker compose exec backend python manage.py ...`、`docker compose run --rm frontend vp ...`。主機的 Node.js 版本不符合 Vite+ 的要求，不要在主機上直接執行 `npm` 或 `vp`。
+- Vite+ 的用法見 [frontend/AGENTS.md](frontend/AGENTS.md)。
 
 ## 不可違反的約束
 

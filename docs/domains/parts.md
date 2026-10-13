@@ -24,7 +24,7 @@
 
 一個 `Part` model 對應整張零件表，設定 `managed = False`，Django 不會為它產生 migration。
 
-欄位定義由實際 schema 產生（`inspectdb`）後再整理。不為各零件類型建立個別的 model。
+欄位定義由實際 schema 產生（`inspectdb`）後再整理。目前的 `Part` model 是依假設的結構手寫的。不為各零件類型建立個別的 model。
 
 ## Part Configuration
 

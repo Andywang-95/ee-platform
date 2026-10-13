@@ -30,15 +30,15 @@
 
 ## 里程碑
 
-### M1 開發環境
+### M1 開發環境（已完成）
 
 - Docker Compose：backend、frontend、開發用 SQL Server（內含零件庫與平台庫兩個 database）
-- 依公司實際 schema 建立開發用零件庫，並寫假資料 seed 腳本
+- 建立開發用零件庫與假資料 seed 腳本。零件表結構目前是假設，取得公司實際 schema 後對齊，見 [domains/parts-schema-assumptions.md](domains/parts-schema-assumptions.md)
 - 用 Vite+ 建立 React + TypeScript 專案
 - Django 設定改為雙資料庫與環境變數
 - `task ci` 涵蓋前後端的 lint、format 檢查、測試
 
-完成標準：`docker compose up` 後瀏覽器能開到前端頁面，前端能呼叫後端的健康檢查 API，後端能讀到假的零件資料。
+完成標準：`task up` 後瀏覽器能開到前端頁面，前端能呼叫後端的健康檢查 API，後端能讀到假的零件資料。
 
 ### M2 零件查詢
 
