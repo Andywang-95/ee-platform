@@ -4,8 +4,8 @@
 
 ## 語言
 
-- 對話、文件、commit 以外的說明文字：繁體中文。
-- 程式碼、識別字、程式註解、commit message：英文。
+- 對話、文件、commit 的條列說明：繁體中文。
+- 程式碼、識別字、程式註解、commit 的標題：英文。
 - 開發者不熟前端，也不熟部署與驗證機制。用到相關術語時簡短說明。
 
 ## 指令
@@ -38,7 +38,7 @@ task format          # 前後端自動格式化
 - 公司環境尚未確認的事不要自行假設。需要假設才能繼續時，寫進 [docs/domains/parts-schema-assumptions.md](docs/domains/parts-schema-assumptions.md) 或 [docs/open-questions.md](docs/open-questions.md)。
 - 做了架構層級的決定就新增 ADR；改變既有決定時新增一份並標明取代哪一份。
 - 行為或指令改變時同步更新對應文件。
-- commit 格式為 `<type>: <summary>`，type 用 `feat`、`fix`、`docs`、`chore`、`refactor`、`test`。
+- commit message 是英文標題 `<type>: <summary>`，空一行後接繁體中文的條列說明，每筆 commit 都要有。type 用 `feat`、`fix`、`docs`、`chore`、`refactor`、`test`。格式與範例見 [docs/conventions.md](docs/conventions.md) 的 Git 一節。
 
 寫程式前先看 [docs/conventions.md](docs/conventions.md)。
 
